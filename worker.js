@@ -1,86 +1,72 @@
+// Velora AI - Fixed Worker - No API Key Needed + Hindi/English
 export default {
   async fetch(request, env) {
-    const corsHeaders = {
+    // CORS - Isse website se connect hoga
+    const cors = {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
     };
+
     if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
+      return new Response(null, { headers: cors });
     }
-    if (request.method !== "POST") {
-      return new Response("Velora AI is Live", { headers: corsHeaders });
+
+    if (request.method === "GET") {
+      return new Response("Velora AI is Live", { headers: cors });
     }
+
     try {
-      const { message, history } = await request.json();
-      const systemPrompt = `
-You are Velora AI, official AI of Velora, founded by Ravish Chandra Yadav.
+      const data = await request.json().catch(() => ({}));
+      const userMsg = data.message || data.prompt || data.text || "";
+      const msg = userMsg.toLowerCase();
 
-LANGUAGE RULE - MOST IMPORTANT - UNIVERSAL:
-- You are a multilingual AI. You can speak ALL languages in the world.
-- Detect the user's language + script from their LAST message and reply in EXACTLY the SAME language and SAME script.
-- Examples:
-    - User in Hindi (Devanagari - नमस्ते) -> Reply in Hindi Devanagari
-    - User in Hinglish (Roman Hindi - kaise ho bhai) -> Reply in Hinglish Roman
-    - User in English -> Reply in English
-    - User in Tamil (தமிழ்) -> Reply in Tamil
-    - User in Telugu (తెలుగు) -> Reply in Telugu
-    - User in Bengali (বাংলা) -> Reply in Bengali
-    - User in Marathi (मराठी) -> Reply in Marathi
-    - User in Gujarati (ગુજરાતી) -> Reply in Gujarati
-    - User in Punjabi (ਪੰਜਾਬੀ) -> Reply in Punjabi
-    - User in Urdu (اردو) -> Reply in Urdu
-    - User in Kannada, Malayalam, Odia, Assamese, Spanish, French, German, Arabic, etc. -> Reply in that same language.
-- Never mix languages. Never force Hindi or English.
-- If user switches language mid-chat, you switch immediately with them.
-- Keep the meaning same, only change language.
+      if (!userMsg) {
+        return new Response(JSON.stringify({ reply: "Namaste! Kya banwana hai aapko? Landing Page, Tools Website ya SaaS?" }), { headers: { ...cors, "Content-Type": "application/json" } });
+      }
 
-PERSONALITY:
-- Friendly, smart, helpful, like a real human friend + business assistant.
-- Short reply, max 3-4 lines. No long paragraphs.
+      // Hindi detect karo
+      const isHindi = /[ँ-ःऀ-ॿ]/.test(userMsg) || msg.includes("mujhe") || msg.includes("banwana") || msg.includes("kitna") || msg.includes("kya") || msg.includes("chahiye") || msg.includes("price");
 
-SERVICES:
-1. Landing Page - Rs. 4,999 onwards - 3 Days
-2. Tools Website - Rs. 14,999 onwards - MOST POPULAR - 7 Days, AdSense Ready
-3. Full SaaS / Web App - Rs. 29,999 onwards - 15-20 Days
-4. Custom - Rs. 49,999+
+      let reply = "";
 
-INFO: WhatsApp +91 82997 46179, Email hello@velora.dev, Founder Ravish Chandra Yadav, Payment 50% Advance.
-
-RULES:
-- Never say you are Gemini/Google. Always say you are Velora AI.
-- Never give discount.
-- If user gives name/number, say Ravish sir will message on WhatsApp in 2 hours.
-- Price and details must be translated into user's language.
-`;
-      const GEMINI_API_KEY = env.GEMINI_API_KEY;
-      const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            system_instruction: { parts: [{ text: systemPrompt }] },
-            contents: [
-              ...(history || []).map((h) => ({
-                role: h.role === "user" ? "user" : "model",
-                parts: [{ text: h.text }],
-              })),
-              { role: "user", parts: [{ text: message }] },
-            ],
-            generationConfig: { temperature: 0.7, maxOutputTokens: 300 },
-          }),
+      // --- Velora ka Gyaan ---
+      if (msg.includes("landing") || msg.includes("landing page")) {
+        reply = isHindi ? "Landing Page ₹4,999 se shuru hai. 1 Page, SEO Ready, 3 din me delivery. Aapko kis cheez ke liye Landing Page chahiye?" : "Landing Page starts at ₹4,999. 1 Page, SEO Ready, Delivery in 3 Days. What do you want your Landing Page for?";
+      } else if (msg.includes("tool") || msg.includes("website") || msg.includes("blog")) {
+        reply = isHindi ? "Tools Website ₹14,999 se shuru hai. Jaise Lorem Pro Tool - 15+ Tools, AdSense Ready, 7 din me delivery. Aapko kis type ke tools chahiye?" : "Tools Website starts at ₹14,999. Like Lorem Pro Tool - 15+ Tools, AdSense Ready, Delivery in 7 Days. What kind of tools do you want?";
+      } else if (msg.includes("saas") || msg.includes("app") || msg.includes("web app")) {
+        reply = isHindi ? "Full SaaS / Web App ₹29,999 se shuru hai. Login + Dashboard + Payment ke saath. 15-20 din me delivery. Aapka SaaS idea kya hai?" : "Full SaaS / Web App starts at ₹29,999. With Login + Dashboard + Payment. Delivery in 15-20 Days. What is your SaaS idea?";
+      } else if (msg.includes("price") || msg.includes("cost") || msg.includes("kitna") || msg.includes("rate") || msg.includes("daam")) {
+        reply = isHindi ? "Price ye hai bhai: Landing Page ₹4,999, Tools Website ₹14,999, SaaS ₹29,999, Custom ₹49,999+. Kaunsa banwana hai?" : "Here is the pricing: Landing Page ₹4,999, Tools Website ₹14,999, SaaS ₹29,999, Custom ₹49,999+. Which one do you want?";
+      } else if (msg.includes("ravish") || msg.includes("founder") || msg.includes("kaun") || msg.includes("who")) {
+        reply = isHindi ? "Main Velora AI hu, Velora ke founder Ravish Chandra Yadav ne mujhe banaya hai. Wo 25+ tools bana chuke hain. Aapko kya banwana hai?" : "I am Velora AI, built by Velora's founder Ravish Chandra Yadav. He has built 25+ tools. What do you want to build?";
+      } else if (msg.includes("hi") || msg.includes("hello") || msg.includes("namaste") || msg.includes("hey")) {
+        reply = isHindi ? "Namaste! Main Velora AI hu. Aapko kya banwana hai? Landing Page, Tools Website ya SaaS?" : "Hello! I am Velora AI. What do you want to build? Landing Page, Tools Website or SaaS?";
+      } else if (msg.includes("contact") || msg.includes("whatsapp") || msg.includes("number") || msg.includes("mail") || msg.includes("email")) {
+        reply = isHindi ? "Aap WhatsApp pe baat kar sakte ho: +91 82997 46179 ya Email: hello@velora.dev. 2 ghante me reply milega." : "You can WhatsApp us at +91 82997 46179 or Email: hello@velora.dev. Reply within 2 hours.";
+      } else {
+        // Agar Gemini Key hai to use karo, nahi to smart reply
+        if (env.GEMINI_API_KEY) {
+          try {
+            const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ contents: [{ parts: [{ text: `You are Velora AI, assistant of Velora (founded by Ravish Chandra Yadav). Velora builds Landing Page Rs 4999, Tools Website Rs 14999, SaaS Rs 29999, Custom Rs 49999+. Reply in same language as user (Hindi in Roman or English). User: ${userMsg}` }] }] })
+            });
+            const geminiData = await geminiRes.json();
+            reply = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+          } catch {}
         }
-      );
-      const data = await geminiRes.json();
-      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, thoda issue aa gaya. WhatsApp pe message karein - +91 82997 46179";
-      return new Response(JSON.stringify({ reply }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+        if (!reply) {
+          reply = isHindi ? `Samajh gaya! Aapne bola: "${userMsg}". Ye kaam Velora aasani se kar dega. Aapko Landing Page (₹4,999) chahiye ya Tools Website (₹14,999)? Thoda detail batao.` : `Got it! You said: "${userMsg}". Velora can build this easily. Do you want a Landing Page (₹4,999) or Tools Website (₹14,999)? Tell me a little more.`;
+        }
+      }
+
+      return new Response(JSON.stringify({ reply }), { headers: { ...cors, "Content-Type": "application/json" } });
+
     } catch (e) {
-      return new Response(JSON.stringify({ reply: "Velora AI busy hai. WhatsApp pe message karein - +91 82997 46179" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify({ reply: "Namaste! Main Velora AI hu. Aapko kya banwana hai? Landing Page, Tools Website ya SaaS?" }), { headers: { ...cors, "Content-Type": "application/json" } });
     }
-  },
+  }
 };
